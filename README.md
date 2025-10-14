@@ -25,3 +25,11 @@ Notes about the dataset:
 •	Name (of TWG)
 •	Programme/Disease Programme (I added this, in line with the categories for the SDGs and UHC indicators page)
 •	Keyword/s (can add more options like by Date Established)
+
+4. GATS (Global Adult Tobacco Survey)
+- pdf files added as reference
+- there could be more pdf files to be added in the future
+
+*Cannot push the shapefiles (too large for github)
+*Shiny can't be loaded in shinyapps.io (too large)
+
