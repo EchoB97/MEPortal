@@ -45,6 +45,7 @@ pacman::p_load(
 
 
 # 1. portal without the map, with health legislations page -----------------------------------------------------------------
+# ui ----------------------------------------------------------------------
 
 ui <- dashboardPage(
   dashboardHeader(title = "M & E Portal"),
@@ -635,33 +636,632 @@ ui <- dashboardPage(
         
       ),
       
+      
       tabItem(
         tabName = "glass_amr_2025",
+        
+        # Introduction Box
         fluidRow(
           box(
-            title = "2025 WHO Global Antimicrobial Resistance and Use Surveillance System (GLASS) report",
-            status = "primary", solidHeader = TRUE,
+            title = tagList(icon("info-circle"), " About GLASS"),
+            status = "info",
+            solidHeader = TRUE,
             width = 12,
+            p(strong("The WHO Global Antimicrobial Resistance and Use Surveillance System (GLASS) was established in 2016"), "to support countries in building national Antimicrobial Resistance (AMR) surveillance systems, harmonizing data collection, and generating evidence to guide action to combat AMR."),
+            br(),
+            p("In the face of the escalating threat of AMR, the", strong("2024 United Nations General Assembly Political Declaration on AMR"), 
+              "set clear targets for global action by 2030, including:"),
+            tags$ul(
+              tags$li("Reducing deaths associated with bacterial AMR by at least", strong("10%")),
+              tags$li("Ensuring that at least", strong("70% of overall human antibiotic use"), 
+                      "is from the WHO AWaRe (Access, Watch, Reserve antibiotics) Access group (essential, first-choice antibiotics)")
+            ),
+            br(),
+            p("The", strong("2025 GLASS report"), "compiles 2023 surveillance data from", 
+              strong("104 countries globally,"), "including", strong("12 countries and areas from the Western Pacific Region,"), 
+              "representing a four-fold increase in the number of countries contributing data since the inception of GLASS in 2016. 
+        The analysis has become progressively more comprehensive, and this report includes global and regional resistance trends 
+        and national prevalence estimates across a total of", strong("93 infection type–pathogen–antibiotic combinations"), 
+              "for the first time.")
+          )
+        ),
+        
+        # Report Downloads Box
+        fluidRow(
+          box(
+            title = tagList(icon("file-pdf"), " 2025 WHO Global Antimicrobial Resistance and Use Surveillance System (GLASS) Report"),
+            status = "primary", 
+            solidHeader = TRUE,
+            width = 12,
+            p(em("Published: 13 October 2025")),
+            br(),
             tabsetPanel(
-              tabPanel("Full Report", 
-                       p("Download the full GLASS-AMR 2025 report (published 13 October 2025):"),
-                       tags$a(href = "https://iris.who.int/items/13c8bb1a-6923-480f-adc6-ba9f9429730c", 
-                              "Download Full Report (PDF)", 
-                              target = "_blank", 
-                              class = "btn btn-primary")),
-              tabPanel("Summary", 
-                       p("Download the summary of the GLASS-AMR 2025 report:"),
-                       tags$a(href = "https://iris.who.int/handle/10665/383069", 
-                              "Download Summary (PDF)", 
-                              target = "_blank", 
-                              class = "btn btn-primary"))
+              tabPanel(
+                "Full Report", 
+                br(),
+                p("Download the complete GLASS-AMR 2025 report:"),
+                tags$a(
+                  href = "https://iris.who.int/items/13c8bb1a-6923-480f-adc6-ba9f9429730c", 
+                  icon("download"), " Download Full Report (PDF)", 
+                  target = "_blank", 
+                  class = "btn btn-primary btn-lg"
+                )
+              ),
+              tabPanel(
+                "Summary", 
+                br(),
+                p("Download the executive summary of the GLASS-AMR 2025 report:"),
+                tags$a(
+                  href = "https://iris.who.int/handle/10665/383069", 
+                  icon("download"), " Download Summary (PDF)", 
+                  target = "_blank", 
+                  class = "btn btn-primary btn-lg"
+                )
+              )
+            )
+          )
+        ),
+        
+        # Key Findings Box (Optional)
+        fluidRow(
+          box(
+            title = tagList(icon("chart-line"), " Key Highlights"),
+            status = "warning",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = 12,
+            tags$ul(
+              tags$li(strong("104 countries"), "contributed surveillance data (4x increase since 2016)"),
+              tags$li(strong("12 countries"), "from Western Pacific Region participating"),
+              tags$li(strong("93 infection-pathogen-antibiotic combinations"), "analyzed for the first time"),
+              tags$li("Comprehensive global and regional resistance trends"),
+              tags$li("National prevalence estimates for participating countries")
             )
           )
         )
       )
+      
+      
+      
     )
   )
 )
+
+
+
+
+
+
+
+# server ------------------------------------------------------------------
+
+server <- function(input, output, session) {
+  
+  # Reactive value to store the data - IMPROVED data cleaning
+  data <- reactive({
+    # Replace with your CSV file path
+    csv_file <- "MEPortal/SDGs and UHC data summary.csv"
+    
+    # Check if file exists
+    if (!file.exists(csv_file)) {
+      showNotification("CSV file not found. Please ensure 'SDGs and UHC data summary.csv' is in the working directory.", 
+                       type = "error", duration = 10)
+      return(data.frame())
+    }
+    
+    tryCatch({
+      # Read and clean the data
+      df <- read_csv(csv_file, locale = locale(encoding = "UTF-8"))
+      
+      # Clean column names
+      colnames(df) <- gsub("[^A-Za-z0-9_]", ".", colnames(df))
+      colnames(df) <- gsub("\\.+", ".", colnames(df))
+      colnames(df) <- gsub("^\\.|\\.$", "", colnames(df))
+      
+      # Convert Year to numeric if it's not already
+      if ("Year" %in% colnames(df)) {
+        df$Year <- as.numeric(as.character(df$Year))
+      }
+      
+      # Clean up the Latest.data columns - attempt to convert to numeric where possible
+      data_cols <- c("Latest.data1", "Latest.data2", "Latest.data3", "Latest.data4")
+      for (col in data_cols) {
+        if (col %in% colnames(df)) {
+          # First, clean the data by removing any non-numeric characters except decimal points and minus signs
+          df[[col]] <- gsub("[^0-9.-]", "", as.character(df[[col]]))
+          # Replace empty strings with NA
+          df[[col]][df[[col]] == "" | df[[col]] == "NA"] <- NA
+        }
+      }
+      
+      # Handle missing values
+      df[df == "" | df == "NA"] <- NA
+      
+      # Ensure is_UHC is logical
+      if ("is_UHC" %in% colnames(df)) {
+        df$is_UHC <- as.logical(df$is_UHC)
+      }
+      
+      return(df)
+      
+    }, error = function(e) {
+      showNotification(paste("Error reading CSV file:", e$message), 
+                       type = "error", duration = 10)
+      return(data.frame())
+    })
+  })
+  
+  # Update filter choices
+  observe({
+    df <- data()
+    if (nrow(df) > 0) {
+      # Update programme choices
+      programmes <- sort(unique(df$Programme.Disease.Programme[!is.na(df$Programme.Disease.Programme)]))
+      updateSelectInput(session, "filter_programme", choices = programmes)
+      updateSelectInput(session, "selected_programme", choices = programmes, selected = programmes[1])
+      
+      # Update SDG choices
+      sdg_targets <- sort(unique(df$SDG_Target[!is.na(df$SDG_Target)]))
+      updateSelectInput(session, "filter_sdg", choices = sdg_targets)
+      updateSelectInput(session, "sdg_target", choices = sdg_targets, selected = sdg_targets[1])
+      
+      # Update year choices
+      years <- sort(unique(df$Year[!is.na(df$Year)]), decreasing = TRUE)
+      updateSelectInput(session, "filter_year", choices = years)
+    }
+  })
+  
+  # Filtered data for explorer
+  filtered_data <- reactive({
+    df <- data()
+    if (nrow(df) == 0) return(df)
+    
+    # Apply filters
+    if (!is.null(input$filter_programme) && length(input$filter_programme) > 0) {
+      df <- df[df$Programme.Disease.Programme %in% input$filter_programme, ]
+    }
+    
+    if (!is.null(input$filter_sdg) && length(input$filter_sdg) > 0) {
+      df <- df[df$SDG_Target %in% input$filter_sdg, ]
+    }
+    
+    if (!is.null(input$filter_year) && length(input$filter_year) > 0) {
+      df <- df[df$Year %in% input$filter_year, ]
+    }
+    
+    if (input$filter_uhc) {
+      df <- df[df$is_UHC == TRUE | !is.na(df$Latest.data4), ]
+    }
+    
+    return(df)
+  })
+  
+  # Value boxes
+  output$total_indicators <- renderValueBox({
+    valueBox(
+      value = nrow(data()),
+      subtitle = "Total Indicators",
+      icon = icon("list"),
+      color = "blue"
+    )
+  })
+  
+  output$uhc_indicators <- renderValueBox({
+    df <- data()
+    uhc_count <- sum(df$is_UHC == TRUE, na.rm = TRUE)
+    valueBox(
+      value = uhc_count,
+      subtitle = "UHC Indicators",
+      icon = icon("heart"),
+      color = "red"
+    )
+  })
+  
+  # Charts - Source distribution
+  output$source_distribution <- renderPlotly({
+    df <- data()
+    if (nrow(df) == 0) return(NULL)
+    
+    source_counts <- data.frame(
+      Source = c("FHSIS", "PHS", "GHO", "UHC/NOH"),
+      Count = c(
+        sum(!is.na(df$Latest.data2)),
+        sum(!is.na(df$Latest.data3)),
+        sum(!is.na(df$Latest.data1)),
+        sum(!is.na(df$Latest.data4))
+      )
+    )
+    
+    p <- plot_ly(source_counts, x = ~Source, y = ~Count, type = 'bar',
+                 marker = list(color = c('#e74c3c', '#2ecc71', '#3498db', '#f39c12'))) %>%
+      layout(title = "Number of Indicators per Source",
+             xaxis = list(title = "Data Source"),
+             yaxis = list(title = "Number of Indicators"))
+    p
+  })
+  
+  # Programme distribution chart
+  output$programme_distribution <- renderPlotly({
+    df <- data()
+    if (nrow(df) == 0) return(NULL)
+    
+    prog_counts <- df %>%
+      count(Programme.Disease.Programme) %>%
+      arrange(desc(n)) %>%
+      head(10)
+    
+    p <- plot_ly(prog_counts, x = ~Programme.Disease.Programme, y = ~n, 
+                 type = 'bar',
+                 marker = list(color = '#9b59b6')) %>%
+      layout(title = "Top 10 Programmes by Indicator Count",
+             xaxis = list(title = "Programme"),
+             yaxis = list(title = "Number of Indicators"),
+             margin = list(b = 150))
+    p
+  })
+  
+  # Tables
+  output$main_table <- DT::renderDataTable({
+    df <- filtered_data()
+    if (nrow(df) == 0) return(NULL)
+    
+    # Remove is_UHC column from display
+    display_df <- df %>% select(-is_UHC)
+    
+    # Rename Latest data columns
+    names(display_df)[names(display_df) == "Latest.data1"] <- "Latest data (GHO)"
+    names(display_df)[names(display_df) == "Latest.data2"] <- "Latest data (FHSIS)"
+    names(display_df)[names(display_df) == "Latest.data3"] <- "Latest data (PHS)"
+    names(display_df)[names(display_df) == "Latest.data4"] <- "Latest data (UHC/NOH)"
+    
+    DT::datatable(display_df, 
+                  options = list(
+                    scrollX = TRUE,
+                    pageLength = 15,
+                    searchHighlight = TRUE
+                  ),
+                  filter = 'top',
+                  rownames = FALSE) %>%
+      formatStyle(columns = colnames(display_df), fontSize = '12px')
+  })
+  
+  output$summary_table <- DT::renderDataTable({
+    df <- data()
+    if (nrow(df) == 0) return(NULL)
+    
+    summary_df <- df %>%
+      select(Programme.Disease.Programme, Indicator, Year, Latest.data1, Latest.data2, Latest.data3, Latest.data4) %>%
+      head(10)
+    
+    # Rename Latest data columns
+    colnames(summary_df)[colnames(summary_df) == "Latest.data1"] <- "GHO"
+    colnames(summary_df)[colnames(summary_df) == "Latest.data2"] <- "FHSIS"
+    colnames(summary_df)[colnames(summary_df) == "Latest.data3"] <- "PHS"
+    colnames(summary_df)[colnames(summary_df) == "Latest.data4"] <- "UHC/NOH"
+    
+    DT::datatable(summary_df, 
+                  options = list(
+                    pageLength = 5,
+                    dom = 't'
+                  ),
+                  rownames = FALSE)
+  })
+  
+  # Programme-specific outputs - FIXED data type handling
+  output$programme_chart <- renderPlotly({
+    df <- data()
+    if (nrow(df) == 0 || is.null(input$selected_programme)) return(NULL)
+    
+    prog_data <- df[df$Programme.Disease.Programme == input$selected_programme, ]
+    data_col <- input$data_source
+    
+    if (nrow(prog_data) == 0) return(NULL)
+    
+    # Ensure data column exists and filter out NAs
+    if (!data_col %in% colnames(prog_data)) {
+      return(plot_ly() %>% add_annotations(text = "Selected data source not available", 
+                                           showarrow = FALSE))
+    }
+    
+    prog_data_clean <- prog_data[!is.na(prog_data[[data_col]]) & prog_data[[data_col]] != "", ]
+    
+    if (nrow(prog_data_clean) == 0) {
+      return(
+        plot_ly() %>% 
+          add_annotations(
+            text = "No data available for selected source", 
+            xref = "paper", yref = "paper", 
+            x = 0.5, y = 0.5,  # center
+            showarrow = FALSE, font = list(size = 14)
+          ) %>%
+          layout(
+            xaxis = list(showticklabels = FALSE, showline = FALSE, zeroline = FALSE, showgrid = FALSE),
+            yaxis = list(showticklabels = FALSE, showline = FALSE, zeroline = FALSE, showgrid = FALSE)
+          )
+      )
+    }
+    
+    
+    # FIXED: Convert to numeric and handle non-numeric values
+    tryCatch({
+      # Convert the data column to numeric
+      numeric_data <- as.numeric(as.character(prog_data_clean[[data_col]]))
+      
+      # Remove rows where conversion failed (resulted in NA)
+      valid_indices <- !is.na(numeric_data)
+      
+      if (sum(valid_indices) == 0) {
+        return(plot_ly() %>% add_annotations(text = "No numeric data available for selected source", 
+                                             showarrow = FALSE))
+      }
+      
+      # Filter the dataframe to only include rows with valid numeric data
+      prog_data_clean <- prog_data_clean[valid_indices, ]
+      numeric_data <- numeric_data[valid_indices]
+      
+      # Add the numeric data back to the dataframe for plotting
+      prog_data_clean$numeric_value <- numeric_data
+      
+      # Calculate y-axis range starting from 0
+      max_val <- max(numeric_data, na.rm = TRUE)
+      min_val <- min(numeric_data, na.rm = TRUE)
+      
+      # Handle edge cases
+      if (is.infinite(max_val) || is.infinite(min_val) || is.na(max_val) || is.na(min_val)) {
+        return(plot_ly() %>% add_annotations(text = "Invalid data values", 
+                                             showarrow = FALSE))
+      }
+      
+      y_range <- c(0, max_val * 1.1)
+      
+      p <- plot_ly(prog_data_clean, x = ~Year, y = ~numeric_value,
+                   text = ~Indicator, type = 'scatter', mode = 'markers+lines') %>%
+        layout(title = paste("Trend for", input$selected_programme),
+               xaxis = list(title = "Year", 
+                            dtick = 1,
+                            tick0 = min(prog_data_clean$Year, na.rm = TRUE)),
+               yaxis = list(title = "Value", range = y_range))
+      return(p)
+      
+    }, error = function(e) {
+      return(plot_ly() %>% add_annotations(text = paste("Error processing data:", e$message), 
+                                           showarrow = FALSE))
+    })
+  })
+  
+  output$programme_table <- DT::renderDataTable({
+    df <- data()
+    if (nrow(df) == 0 || is.null(input$selected_programme)) return(NULL)
+    
+    prog_data <- df[df$Programme.Disease.Programme == input$selected_programme, ]
+    
+    # Remove is_UHC column from display
+    display_prog_data <- prog_data %>% select(-is_UHC)
+    
+    # Rename Latest data columns to match Data Explorer
+    names(display_prog_data)[names(display_prog_data) == "Latest.data1"] <- "Latest data (GHO)"
+    names(display_prog_data)[names(display_prog_data) == "Latest.data2"] <- "Latest data (FHSIS)"
+    names(display_prog_data)[names(display_prog_data) == "Latest.data3"] <- "Latest data (PHS)"
+    names(display_prog_data)[names(display_prog_data) == "Latest.data4"] <- "Latest data (UHC/NOH)"
+    
+    DT::datatable(display_prog_data, options = list(scrollX = TRUE, pageLength = 10), rownames = FALSE)
+  })
+  
+  # SDG outputs - FIXED data type handling
+  output$sdg_chart <- renderPlotly({
+    df <- data()
+    if (nrow(df) == 0 || is.null(input$sdg_target)) return(NULL)
+    
+    sdg_data <- df[df$SDG_Target == input$sdg_target, ]
+    
+    if (nrow(sdg_data) == 0) return(NULL)
+    
+    # Remove rows with NA values for Latest.data1
+    sdg_data_clean <- sdg_data[!is.na(sdg_data$Latest.data1) & sdg_data$Latest.data1 != "", ]
+    
+    if (nrow(sdg_data_clean) == 0) {
+      return(plot_ly() %>% add_annotations(text = "No data available", showarrow = FALSE))
+    }
+    
+    tryCatch({
+      # Convert to numeric and handle non-numeric values
+      numeric_data <- as.numeric(as.character(sdg_data_clean$Latest.data1))
+      valid_indices <- !is.na(numeric_data)
+      
+      if (sum(valid_indices) == 0) {
+        return(plot_ly() %>% add_annotations(text = "No numeric data available", 
+                                             showarrow = FALSE))
+      }
+      
+      sdg_data_clean <- sdg_data_clean[valid_indices, ]
+      sdg_data_clean$numeric_value <- numeric_data[valid_indices]
+      
+      max_val <- max(sdg_data_clean$numeric_value, na.rm = TRUE)
+      y_range <- c(0, max_val * 1.1)
+      
+      p <- plot_ly(sdg_data_clean, x = ~Indicator, y = ~numeric_value, type = 'bar') %>%
+        layout(title = paste("SDG Target:", input$sdg_target),
+               xaxis = list(title = "Indicator"),
+               yaxis = list(title = "Value", range = y_range),
+               margin = list(b = 150))
+      return(p)
+      
+    }, error = function(e) {
+      return(plot_ly() %>% add_annotations(text = paste("Error processing data:", e$message), 
+                                           showarrow = FALSE))
+    })
+  })
+  
+  output$sdg_table <- DT::renderDataTable({
+    df <- data()
+    if (nrow(df) == 0 || is.null(input$sdg_target)) return(NULL)
+    
+    sdg_data <- df[df$SDG_Target == input$sdg_target, ]
+    
+    # Remove is_UHC column from display
+    display_sdg_data <- sdg_data %>% select(-is_UHC)
+    
+    # Rename Latest data columns
+    names(display_sdg_data)[names(display_sdg_data) == "Latest.data1"] <- "Latest data (GHO)"
+    names(display_sdg_data)[names(display_sdg_data) == "Latest.data2"] <- "Latest data (FHSIS)"
+    names(display_sdg_data)[names(display_sdg_data) == "Latest.data3"] <- "Latest data (PHS)"
+    names(display_sdg_data)[names(display_sdg_data) == "Latest.data4"] <- "Latest data (UHC/NOH)"
+    
+    DT::datatable(display_sdg_data, options = list(scrollX = TRUE, pageLength = 10), rownames = FALSE)
+  })
+  
+  output$sdg_summary <- renderText({
+    df <- data()
+    if (nrow(df) == 0 || is.null(input$sdg_target)) return("No data selected")
+    
+    sdg_data <- df[df$SDG_Target == input$sdg_target, ]
+    paste("Total Indicators:", nrow(sdg_data))
+  })
+  
+  # UHC outputs - FIXED data type handling
+  output$uhc_chart <- renderPlotly({
+    df <- data()
+    if (nrow(df) == 0) return(NULL)
+    
+    uhc_data <- df[df$is_UHC == TRUE, ]
+    
+    if (nrow(uhc_data) == 0) return(NULL)
+    
+    # Remove rows with NA values for Latest.data4
+    uhc_data_clean <- uhc_data[!is.na(uhc_data$Latest.data4) & uhc_data$Latest.data4 != "", ]
+    
+    if (nrow(uhc_data_clean) == 0) {
+      return(plot_ly() %>% add_annotations(text = "No UHC data available", showarrow = FALSE))
+    }
+    
+    tryCatch({
+      # Convert to numeric and handle non-numeric values
+      numeric_data <- as.numeric(as.character(uhc_data_clean$Latest.data4))
+      valid_indices <- !is.na(numeric_data)
+      
+      if (sum(valid_indices) == 0) {
+        return(plot_ly() %>% add_annotations(text = "No numeric UHC data available", 
+                                             showarrow = FALSE))
+      }
+      
+      uhc_data_clean <- uhc_data_clean[valid_indices, ]
+      uhc_data_clean$numeric_value <- numeric_data[valid_indices]
+      
+      # Calculate y-axis range starting from 0
+      max_val <- max(uhc_data_clean$numeric_value, na.rm = TRUE)
+      y_range <- c(0, max_val * 1.1)
+      
+      # ✅ Wrap labels for readability (Plotly needs <br> instead of \n)
+      uhc_data_clean$wrapped_indicator <- str_wrap(uhc_data_clean$UHC.Indicator, width = 30)
+      uhc_data_clean$wrapped_indicator <- gsub("\n", "<br>", uhc_data_clean$wrapped_indicator)
+      
+      # Plot
+      p <- plot_ly(uhc_data_clean, x = ~wrapped_indicator, y = ~numeric_value, type = 'bar',
+                   marker = list(color = '#2ecc71')) %>%
+        layout(title = "UHC Indicators",
+               xaxis = list(title = "UHC Indicator", 
+                            tickangle = -45,  # if still crowded, set tickangle = 45 or 90
+                            tickmode = "array",
+                            tickvals = uhc_data_clean$wrapped_indicator,
+                            ticktext = uhc_data_clean$wrapped_indicator),
+               yaxis = list(title = "Value", range = y_range,
+                            tickfont = list(size = 7)),
+               margin = list(b = 150, l = 50, r = 50, t = 80))
+      return(p)
+      
+    }, error = function(e) {
+      return(plot_ly() %>% add_annotations(text = paste("Error processing data:", e$message), 
+                                           showarrow = FALSE))
+    })
+  })
+  
+  output$uhc_table <- DT::renderDataTable({
+    df <- data()
+    if (nrow(df) == 0) return(NULL)
+    
+    uhc_data <- df[df$is_UHC == TRUE, ]
+    
+    # Remove is_UHC column from display since it's redundant in this context
+    display_uhc_data <- uhc_data %>% select(-is_UHC)
+    
+    # Rename Latest data columns
+    names(display_uhc_data)[names(display_uhc_data) == "Latest.data1"] <- "Latest data (GHO)"
+    names(display_uhc_data)[names(display_uhc_data) == "Latest.data2"] <- "Latest data (FHSIS)"
+    names(display_uhc_data)[names(display_uhc_data) == "Latest.data3"] <- "Latest data (PHS)"
+    names(display_uhc_data)[names(display_uhc_data) == "Latest.data4"] <- "Latest data (UHC/NOH)"
+    
+    DT::datatable(display_uhc_data, options = list(scrollX = TRUE, pageLength = 10), rownames = FALSE)
+  })
+  
+  # Reset filters
+  observeEvent(input$reset_filters, {
+    updateSelectInput(session, "filter_programme", selected = character(0))
+    updateSelectInput(session, "filter_sdg", selected = character(0))
+    updateSelectInput(session, "filter_year", selected = character(0))
+    updateCheckboxInput(session, "filter_uhc", value = FALSE)
+  })
+  
+  
+  # ---- GATS Downloads ----
+  output$download_zamboanga <- downloadHandler(
+    filename = function() {"ZAMBOANGA_GATS2021_Factsheet_29MAR2023.pdf"},
+    content = function(file) {
+      file.copy("GATS/ZAMBOANGA_GATS2021_Factsheet_29MAR2023.pdf", file)
+    }
+  )
+  
+  output$download_quezon <- downloadHandler(
+    filename = function() {"QUEZON_GATS2021_Factsheet_29MAR2023.pdf"},
+    content = function(file) {
+      file.copy("GATS/QUEZON_GATS2021_Factsheet_29MAR2023.pdf", file)
+    }
+  )
+  
+  output$download_philcomp <- downloadHandler(
+    filename = function() {"PHL_GATS2021_FS-Comparison_29NOV2022.pdf"},
+    content = function(file) {
+      file.copy("GATS/PHL_GATS2021_FS-Comparison_29NOV2022.pdf", file)
+    }
+  )
+  
+  output$download_philfacts <- downloadHandler(
+    filename = function() {"PHL_GATS2021_Factsheet_13FEB2023.pdf"},
+    content = function(file) {
+      file.copy("GATS/PHL_GATS2021_Factsheet_13FEB2023.pdf", file)
+    }
+  )
+  
+  output$download_gensan <- downloadHandler(
+    filename = function() {"GENERALSANTOS_GATS2021_Factsheet_29MAR2023.pdf"},
+    content = function(file) {
+      file.copy("GATS/GENERALSANTOS_GATS2021_Factsheet_29MAR2023.pdf", file)
+    }
+  )
+  
+  output$download_cebu <- downloadHandler(
+    filename = function() {"CEBU_GATS2021_Factsheet_27FEB2023.pdf"},
+    content = function(file) {
+      file.copy("GATS/CEBU_GATS2021_Factsheet_27FEB2023.pdf", file)
+    }
+  )
+  
+  output$download_baguio <- downloadHandler(
+    filename = function() {"BAGUIO_GATS2021_Factsheet_16FEB2023.pdf"},
+    content = function(file) {
+      file.copy("GATS/BAGUIO_GATS2021_Factsheet_16FEB2023.pdf", file)
+    }
+  )
+  
+  
+  
+  
+  
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+
 
 
 
