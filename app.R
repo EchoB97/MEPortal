@@ -33,7 +33,8 @@ pacman::p_load(
   here,
   rio,
   shiny, shinydashboard,
-  DT,dplyr,plotly,readr,ggplot2,
+  DT,dplyr,plotly,readr,
+  ggplot2,
   sf,
   leaflet,
   stringr,
@@ -42,10 +43,11 @@ pacman::p_load(
 
 
 
-# 1. portal without the map -----------------------------------------------------------------
+
+# 1. portal without the map, with health legislations page -----------------------------------------------------------------
 
 ui <- dashboardPage(
-  dashboardHeader(title = "Health Indicators Dashboard"),
+  dashboardHeader(title = "M & E Portal"),
   
   dashboardSidebar(
     sidebarMenu(
@@ -54,7 +56,9 @@ ui <- dashboardPage(
       menuItem("Programme Analysis", tabName = "programme", icon = icon("chart-bar")),
       menuItem("SDG Indicators", tabName = "sdg", icon = icon("globe")),
       menuItem("UHC Indicators", tabName = "uhc", icon = icon("heart")),
-      menuItem("Global Adult Tobacco Survey (GATS)", tabName = "gats", icon = icon("file-pdf"))
+      menuItem("Global Adult Tobacco Survey (GATS)", tabName = "gats", icon = icon("file-pdf")),
+      menuItem("Health Legislation", tabName = "legislation", icon = icon("gavel")),
+      menuItem("Antimicrobial Resistance (AMR)", tabName = "glass_amr_2025", icon = icon("microscope"))
     )
   ),
   
@@ -233,10 +237,436 @@ ui <- dashboardPage(
             )
           )
         )
+      ),
+      tabItem(
+        tabName = "legislation",
+        
+        # PDP Priority Legislations
+        fluidRow(
+          box(
+            title = "Health-related Legislations", 
+            status = "primary", 
+            solidHeader = TRUE,
+            width = 12,
+            p(strong("Priority legislation identified in the PDP Mid-term report subchapter on health:"))
+          )
+        ),
+        
+        fluidRow(
+          column(
+            width = 4,
+            box(
+              title = tagList(icon("flask"), " Creation of the Virology & Vaccine Institute of the Philippines"),
+              status = "info",
+              solidHeader = FALSE,
+              width = NULL
+            )
+          ),
+          column(
+            width = 4,
+            box(
+              title = tagList(icon("shield-virus"), " Creation of the Philippine Center for Disease Control & Prevention (CDC)"),
+              status = "info",
+              solidHeader = FALSE,
+              width = NULL
+            )
+          ),
+          column(
+            width = 4,
+            box(
+              title = tagList(icon("users"), " Magna Carta for BHWs"),
+              status = "info",
+              solidHeader = FALSE,
+              width = NULL
+            )
+          )
+        ),
+        
+        fluidRow(
+          column(
+            width = 4,
+            box(
+              title = tagList(icon("laptop-medical"), " Telemedicine Law"),
+              status = "info",
+              solidHeader = FALSE,
+              width = NULL,
+              p("Telemedicine Law/Act")
+            )
+          ),
+          column(
+            width = 4,
+            box(
+              title = tagList(icon("user-md"), " Establishment of Medical Reserve Corps (MRC)"),
+              status = "info",
+              solidHeader = FALSE,
+              width = NULL
+            )
+          ),
+          column(
+            width = 4,
+            box(
+              title = tagList(icon("hospital"), " Health Facilities & Services Regulation Act"),
+              status = "info",
+              solidHeader = FALSE,
+              width = NULL
+            )
+          ),
+          
+          column(
+            width = 6,
+            box(
+              title = tagList(
+                icon("file-medical")," RA 11332 Amendment"),
+              status = "info",
+              solidHeader = FALSE,
+              width = NULL,
+              p("Amendment on RA11332 (law on notifiable diseases)")
+            )
+          ),
+          column(
+            width = 6,
+            box(
+              title = tagList(
+                icon("paw")," Amendment of the OP-AO on Philippine Interagency Committee on Zoonoses"),
+              status = "info",
+              solidHeader = FALSE,
+              width = NULL
+            )
+          )
+        ),
+        
+        # International Agreements & Amendments
+        fluidRow(
+          box(
+            title = tagList(icon("globe"), " International Agreements & Key Amendments"),
+            status = "warning",
+            solidHeader = TRUE,
+            width = 12
+          )
+        ),
+        
+        fluidRow(
+          column(
+            width = 6,
+            box(
+              title = "Pandemic Agreement",
+              status = "warning",
+              solidHeader = FALSE,
+              width = NULL,
+              p("EO or Senate approval of the Pandemic Agreement")
+            )
+          ),
+        ),
+        
+        fluidRow(
+          column(
+            width = 6,
+            box(
+              title = "Tobacco Protocol",
+              status = "warning",
+              solidHeader = FALSE,
+              width = NULL,
+              p("Accession to the WHO FCTC Protocol to Eliminate Illicit Trade in Tobacco Products")
+            )
+          )
+        ),
+        
+        # DOH Administrative Orders
+        fluidRow(
+          box(
+            title = tagList(icon("file-alt"), " DOH Administrative Orders & Revisions"),
+            status = "success",
+            solidHeader = TRUE,
+            width = 12
+          )
+        ),
+        
+        fluidRow(
+          column(
+            width = 4,
+            box(
+              title = "EREID Program",
+              status = "success",
+              solidHeader = FALSE,
+              width = NULL,
+              p("Revise DOH-AO on roles and responsibilities of DOH-Emerging & Re-emerging Infectious Disease (EREID) program")
+            )
+          ),
+          column(
+            width = 4,
+            box(
+              title = "FWBD Program",
+              status = "success",
+              solidHeader = FALSE,
+              width = NULL,
+              p("Revise DOH-AO on roles and responsibilities of Food & Waterborne Disease (FWBD) program")
+            )
+          ),
+          column(
+            width = 4,
+            box(
+              title = "RITM Mandate",
+              status = "success",
+              solidHeader = FALSE,
+              width = NULL,
+              p("Revise OP-EO on the mandate of Research Institute for Tropical Medicine (RITM)")
+            )
+          )
+        ),
+        
+        # Drug Policy & Environmental Health
+        fluidRow(
+          box(
+            title = tagList(icon("pills"), " Drug Policy"),
+            status = "danger",
+            solidHeader = TRUE,
+            width = 12
+          )
+        ),
+        
+        fluidRow(
+          column(
+            width = 6,
+            box(
+              title = "Amendments of the Comprehensive Dangerous Drugs Act (RA 9165)",
+              status = "danger",
+              solidHeader = FALSE,
+              width = NULL,
+              p("WHO worked with DDB and UNODC")
+            )
+          )
+        ),
+        
+        fluidRow(
+          box(
+            title = tagList(icon("leaf"), " Environmental Health"),
+            status = "success",
+            solidHeader = TRUE,
+            width = 12
+          ),
+          column(
+            width = 6,
+            box(
+              title = "Environmental Health Act",
+              status = "success",
+              solidHeader = FALSE,
+              width = NULL,
+              p("Draft Environmental Health Act as revision of the old Sanitation Code (1975)")
+            )
+          )
+        ),
+        
+        # Healthy Communities & Nutrition
+        fluidRow(
+          box(
+            title = tagList(icon("heart"), " Healthy Communities & Nutrition"),
+            status = "primary",
+            solidHeader = TRUE,
+            width = 12
+          )
+        ),
+        
+        fluidRow(
+          column(
+            width = 4,
+            box(
+              title = "Walkable & Bikeable Communities Acts",
+              status = "primary",
+              solidHeader = FALSE,
+              width = NULL,
+              p(em("SBN 24, SBN 528, SBN 883"))
+            )
+          ),
+          column(
+            width = 4,
+            box(
+              title = "Healthy Food Environment",
+              status = "primary",
+              solidHeader = FALSE,
+              width = NULL,
+              p("Instituting a Legal Framework for a Healthy Food Environment")
+            )
+          ),
+          column(
+            width = 4,
+            box(
+              title = "Adolescent Pregnancy Prevention",
+              status = "primary",
+              solidHeader = FALSE,
+              width = NULL,
+              p("National Policy in Preventing Adolescent Pregnancy"),
+              p(em("House Bill 3988"))
+            )
+          )
+        ),
+        
+        # Maternal & Child Health
+        fluidRow(
+          box(
+            title = tagList(icon("baby"), " Maternal & Child Health"),
+            status = "info",
+            solidHeader = TRUE,
+            width = 12
+          )
+        ),
+        
+        fluidRow(
+          column(
+            width = 6,
+            box(
+              title = "Breast Milk Banking Act",
+              status = "info",
+              solidHeader = FALSE,
+              width = NULL,
+              p(em("Senate Bill 792"))
+            )
+          ),
+          column(
+            width = 6,
+            box(
+              title = "Infant-Friendly Facilities Bills",
+              status = "info",
+              solidHeader = FALSE,
+              width = NULL,
+              p(em("HB 1950, 4574, 4799, 5459, 9403, 9678, 10072"))
+            )
+          )
+        ),
+        
+        # Digital Health & Data
+        fluidRow(
+          box(
+            title = tagList(icon("database"), " Digital Health & Health Information Systems"),
+            status = "success",
+            solidHeader = TRUE,
+            width = 12
+          )
+        ),
+        
+        fluidRow(
+          column(
+            width = 4,
+            box(
+              title = "Konektadong Pinoy Act",
+              status = "success",
+              solidHeader = FALSE,
+              width = NULL,
+              p("Republic Act No. 12234")
+            )
+          ),
+          column(
+            width = 4,
+            box(
+              title = "Health Passport System Act",
+              status = "success",
+              solidHeader = FALSE,
+              width = NULL,
+              p(em("Senate Bill No. 110"))
+            )
+          ),
+          column(
+            width = 4,
+            box(
+              title = "Philippine Civil Registration and Vital Statistics Act",
+              status = "success",
+              solidHeader = FALSE,
+              width = NULL,
+              p(em("Senate Bill No. 2914"))
+            )
+          )
+        ),
+        
+        fluidRow(
+          column(
+            width = 6,
+            box(
+              title = "One Electronic Medical Records Act",
+              status = "success",
+              solidHeader = FALSE,
+              width = NULL,
+              p(em("Senate Bill No. 139"))
+            )
+          ),
+          column(
+            width = 6,
+            box(
+              title = "Philippine Health Card Act of 2025",
+              status = "success",
+              solidHeader = FALSE,
+              width = NULL,
+              p(em("Senate Bill No. 2983"))
+            )
+          )
+        ),
+        
+        # Senior Citizens & Vulnerable Populations
+        fluidRow(
+          box(
+            title = tagList(icon("user-shield"), " Senior Citizens & Vulnerable Populations"),
+            status = "warning",
+            solidHeader = TRUE,
+            width = 12
+          )
+        ),
+        
+        fluidRow(
+          column(
+            width = 6,
+            box(
+              title = "Act Providing Monthly Maintenance Medication Support for Senior Citizens",
+              status = "warning",
+              solidHeader = FALSE,
+              width = NULL,
+              p(em("SBN 164"))
+            )
+          ),
+          column(
+            width = 6,
+            box(
+              title = "Legislative initiatives related to PRSEAH",
+              status = "warning",
+              solidHeader = FALSE,
+              width = NULL,
+              p(" - amendments to RA 11313 (Safe Spaces Act)"),
+              p(em("House Bills: 768, 1047, 3118, 4119"))
+            )
+          )
+        )
+        
+      ),
+      
+      tabItem(
+        tabName = "glass_amr_2025",
+        fluidRow(
+          box(
+            title = "2025 WHO Global Antimicrobial Resistance and Use Surveillance System (GLASS) report",
+            status = "primary", solidHeader = TRUE,
+            width = 12,
+            tabsetPanel(
+              tabPanel("Full Report", 
+                       p("Download the full GLASS-AMR 2025 report (published 13 October 2025):"),
+                       tags$a(href = "https://iris.who.int/items/13c8bb1a-6923-480f-adc6-ba9f9429730c", 
+                              "Download Full Report (PDF)", 
+                              target = "_blank", 
+                              class = "btn btn-primary")),
+              tabPanel("Summary", 
+                       p("Download the summary of the GLASS-AMR 2025 report:"),
+                       tags$a(href = "https://iris.who.int/handle/10665/383069", 
+                              "Download Summary (PDF)", 
+                              target = "_blank", 
+                              class = "btn btn-primary"))
+            )
+          )
+        )
       )
     )
   )
 )
+
+
+
+
+
 
 
 # server ------------------------------------------------------------------
@@ -757,6 +1187,10 @@ server <- function(input, output, session) {
       file.copy("GATS/BAGUIO_GATS2021_Factsheet_16FEB2023.pdf", file)
     }
   )
+  
+  
+  
+  
   
 }
 
@@ -1761,6 +2195,12 @@ server <- function(input, output, session) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
+
+
+
+
+# add health related legislations -----------------------------------------
+
 
 
 
