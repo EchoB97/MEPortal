@@ -8,7 +8,7 @@
 # •	By Programme/Disease Programme tab 
 # 
 # Notes about the dataset:
-# •	Latest data1 and Link1 = SDGs - GHO
+# •	Latest data1 and Link1 = SDGs - GHO, SDGs - WHO Global Antimicrobial Resistance and Use Surveillance System (GLASS)
 # •	Latest data2 and Link2 = FHSIS
 # •	Latest data3 and Link3 = Philippine Health Statistics (PHS)
 # •	Latest data4 = UHC/National Objectives for Health (no link); not solely numerical in nature as some have narrations/descriptions
